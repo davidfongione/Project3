@@ -1,4 +1,5 @@
 #include "protoplanet.h"
+#include "time.h"
 
 protoplanet::protoplanet()
 {
@@ -11,6 +12,9 @@ protoplanet::protoplanet()
     velocity[2] = 0.;
     potential = 0.;
     kinetic = 0.;
+    angular[0] = 0.;
+    angular[1] = 0.;
+    angular[2] = 0.;
 }
 
 protoplanet::protoplanet(double M, double x, double y, double z, double vx, double vy, double vz)
@@ -24,6 +28,9 @@ protoplanet::protoplanet(double M, double x, double y, double z, double vx, doub
     velocity[2] = vz;
     potential = 0.;
     kinetic = 0.;
+    angular[0] = 0.;
+    angular[1] = 0.;
+    angular[2] = 0.;
 }
 
 double protoplanet::r()
@@ -56,17 +63,17 @@ double protoplanet::distance(protoplanet otherPlanet)
     return sqrt(xx*xx + yy*yy + zz*zz);
  }
 
-double protoplanet::GravitationalForce(protoplanet otherPlanet,double Gconst)
+double protoplanet::GravitationalForce(protoplanet otherPlanet)
 {
     double r = this->distance(otherPlanet);
-    if(r!=0) return Gconst*this->mass*otherPlanet.mass/(r*r);
+    if(r!=0) return (6.67e-11)*this->mass*otherPlanet.mass/(r*r);
     else return 0;
 }
 
-double protoplanet::Acceleration(protoplanet otherPlanet, double Gconst)
+double protoplanet::Acceleration(protoplanet otherPlanet)
 {
     double r = this->distance(otherPlanet);
-    if(r!=0) return this->GravitationalForce(otherPlanet,Gconst)/(this->mass*r);
+    if(r!=0) return this->GravitationalForce(otherPlanet)/(this->mass*r);
     else return 0;
 }
 
@@ -76,25 +83,64 @@ double protoplanet::KineticEnergy()
     return 0.5*this->mass*velocity2;
 }
 
-double protoplanet::PotentialEnergy(protoplanet &otherPlanet, double Gconst, double epsilon)
+double protoplanet::PotentialEnergy(protoplanet &otherPlanet, double epsilon)
 {
-    if(epsilon==0.0) return -Gconst*this->mass*otherPlanet.mass/this->distance(otherPlanet);
-    else return (Gconst*this->mass*otherPlanet.mass/epsilon)*(atan(this->distance(otherPlanet)/epsilon) - (0.5*M_PI));
+    if(epsilon==0.0) return -(6.67e-11)*this->mass*otherPlanet.mass/this->distance(otherPlanet);
+    else return ((6.67e-11)*this->mass*otherPlanet.mass/epsilon)*(atan(this->distance(otherPlanet)/epsilon) - (0.5*M_PI));
 }
 
-void protoplanet::EulerBinary(int integration_points, double final_time, std::ofstream &output)
+double * protoplanet::LinearMomentum()
+{
+    double * linear_momentum;
+    linear_momentum = new double[3];
+
+    for (int i = 0;i<3;i++) linear_momentum[i] = this->mass * this->velocity[i];
+
+    return linear_momentum;
+}
+
+double * protoplanet::AngularMomentum()
+{
+    double * angmom;
+    angmom = new double[3];
+
+    double * linmom = this->LinearMomentum();
+
+    for (int i=0;i<3;i++)
+        angmom[i] = this->position[(i+1)%3] * linmom[(i+2)%3] - this->position[(i+2)%3] * linmom[(i+1)%3];
+    return angmom;
+}
+
+void protoplanet::EulerBinary(int integration_points, double final_time)
 {
     double h = final_time/((double) integration_points);
     double time = 0.0;
-    time += h;
     double FourPi2 = 4 *M_PI*M_PI;
+    protoplanet center(1.,0.,0.,0.,0.,0.,0.);
+
+    std::ofstream output("Euler.txt");
+    std::ofstream output_energy("Energy_Euler.txt");
 
     double r3 = this->r() * this->r() * this->r();
-    output << std::setw(5) << "time" << std::setw(15) << "x" << std::setw(15) << "y" << std::setw(15) << "z" << std::setw(15) << "vx" << std::setw(15) << "vy" << std::setw(15) << "vz" << std::endl;
-    while (time <= final_time)
-    {
+    output << std::setw(6) << "time" << std::setw(15) << "x" << std::setw(15) << "y" << std::setw(15) << "z" << std::setw(15) << "vx" << std::setw(15) << "vy" << std::setw(15) << "vz" << std::endl;
+    output_energy << std::setw(6) << "time" << std::setw(15) << "kinetic" << std::setw(15) << "potential" << std::setw(15) << "angular_x" << std::setw(15) << "angular_y" << std::setw(15) << "angular_z" << std::endl;
 
-        output << std::setw(5) << std::setprecision(3) << time;
+    clock_t start, finish;
+    start = clock();
+
+    while (time < final_time)
+    {
+        this->kinetic = this->KineticEnergy();
+        this->potential = this->PotentialEnergy(center, 1.0e-6);
+        for(int j=0;j<3;j++) this->angular[j] = this->AngularMomentum()[j];
+
+        output_energy << std::setw(6) << std::setprecision(3) << time;
+        output_energy << std::setw(15) << std::setprecision(8) << this->kinetic;
+        output_energy << std::setw(15) << std::setprecision(8) << this->potential;
+        for(int j=0;j<3;j++) output_energy << std::setw(15) << std::setprecision(8) << this->angular[j];
+        output_energy << std::endl;
+
+        output << std::setw(6) << std::setprecision(3) << time;
         for(int j=0;j<3;j++) output << std::setw(15) << std::setprecision(8) << this->position[j];
         for(int j=0;j<3;j++) output << std::setw(15) << std::setprecision(8) << this->velocity[j];
         output << std::endl;
@@ -112,39 +158,67 @@ void protoplanet::EulerBinary(int integration_points, double final_time, std::of
         time += h;
 
     }
-    output << time ;
-    for(int j=0;j<3;j++) output << std::setw(15) << std::setprecision(8) << this->position[j];
-    for(int j=0;j<3;j++) output << std::setw(15) << std::setprecision(8) << this->velocity[j];
-    output << std::endl;
+    finish = clock();
+    std::cout << "elapsed time :" << (double) (finish-start)/((double) CLOCKS_PER_SEC) << std::endl;
+    std::cout << "bound : " << this->Bound() << std::endl;
 }
 
-void protoplanet::VerletBinary(int integration_points, double final_time, std::ofstream &output)
+void protoplanet::VerletBinary(int integration_points, double final_time)
 {
     double h = final_time/((double) integration_points);
     double h2 = h*h;
     double time = 0.0;
-    time += h;
-    double FourPi2 = 4 *M_PI*M_PI;
+    double TwoPi2 = 2 *M_PI*M_PI;
+    protoplanet center(1.,0.,0.,0.,0.,0.,0.);
 
-    double r3 = this->r() * this->r() * this->r();
-    double * x_prev, * x_plus;
+    std::ofstream output("Verlet.txt");
+    std::ofstream output_energy("Energy_Verlet.txt");
+
+    double r3 = this->r() * this->r() * this->r(), r3_prev;
+    double * x_prev;
     x_prev = new double [3];
-    x_plus = new double [3];
-    output << std::setw(5) << "time" << std::setw(15) << "x" << std::setw(15) << "y" << std::setw(15) << "z" << std::setw(15) << "vx" << std::setw(15) << "vy" << std::setw(15) << "vz" << std::endl;
-    while (time <= final_time)
+    output << std::setw(6) << "time" << std::setw(15) << "x" << std::setw(15) << "y" << std::setw(15) << "z" << std::setw(15) << "vx" << std::setw(15) << "vy" << std::setw(15) << "vz" << std::endl;
+    output_energy << std::setw(6) << "time" << std::setw(15) << "kinetic" << std::setw(15) << "potential" << std::setw(15) << "angular_x" << std::setw(15) << "angular_y" << std::setw(15) << "angular_z" << std::endl;
+
+    clock_t start, finish;
+    start = clock();
+
+    while (time < final_time)
     {
-        for(int j=0;j<3;j++) { x_prev[j]=this->position[j]; this->position[j]=x_plus[j];}
-        r3 = this->r()*this->r()*this->r();
+        this->kinetic = this->KineticEnergy();
+        this->potential = this->PotentialEnergy(center, 1.0e-6);
+        for(int j=0;j<3;j++) this->angular[j] = this->AngularMomentum()[j];
 
-        for(int j=0;j<3;j++) x_plus[j] = (2 - h2*FourPi2/r3) * this->position[j] - x_prev[j];
-        for(int j=0;j<3;j++) this->velocity[j] = (x_plus[j] - x_prev[j])/(2 * h);
+        output_energy << std::setw(6) << std::setprecision(3) << time;
+        output_energy << std::setw(15) << std::setprecision(8) << this->kinetic;
+        output_energy << std::setw(15) << std::setprecision(8) << this->potential;
+        for(int j=0;j<3;j++) output_energy << std::setw(15) << std::setprecision(8) << this->angular[j];
+        output_energy << std::endl;
 
-        output << std::setw(5) << std::setprecision(3) << time;
+        output << std::setw(6) << std::setprecision(3) << time;
         for(int j=0;j<3;j++) output << std::setw(15) << std::setprecision(8) << this->position[j];
         for(int j=0;j<3;j++) output << std::setw(15) << std::setprecision(8) << this->velocity[j];
         output << std::endl;
 
+        for(int j=0;j<3;j++) x_prev[j]=this->position[j];
+        r3_prev = r3;
+
+        for(int j=0;j<3;j++)
+            this->position[j] = (1 - h2*TwoPi2/r3) * this->position[j] + h * this->velocity[j];
+        r3 = this->r()*this->r()*this->r();
+        for(int j=0;j<3;j++)
+            this->velocity[j] += - h * TwoPi2 * ( (x_prev[j]/r3_prev) + this->position[j]/r3 );
+
         time += h;
 
     }
+    finish = clock();
+    std::cout << "elapsed time :" << (double) (finish-start)/((double) CLOCKS_PER_SEC) << std::endl;
+    std::cout << "bound : " << this->Bound() << std::endl;
+
+}
+
+bool protoplanet::Bound()
+{
+    return ((this->kinetic + this->potential) < 0.0);
 }

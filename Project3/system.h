@@ -1,11 +1,11 @@
-#ifndef SOLVER_H
-#define SOLVER_H
+#ifndef SYSTEM_H
+#define SYSTEM_H
 #include "planet.h"
 #include <vector>
 #include <fstream>
 using std::vector;
 
-class solver
+class system
 {
 public:
     friend class planet;
@@ -20,8 +20,8 @@ public:
     // constants
 
     // initializers
-    solver();
-    solver(double radi);
+    system();
+    system(double radi);
 
     // functions
     void add(planet newplanet);
@@ -34,11 +34,11 @@ public:
     void delete_matrix(double **matrix);
     void GravitationalForce(planet &current, planet &other, double &Fx, double &Fy, double &Fz, double epsilon);
     void GravitationalForce_RK(double x_rel, double y_rel, double z_rel, double &Fx, double &Fy, double &Fz, double mass1, double mass2);
-    void KineticEnergySystem();
-    void PotentialEnergySystem(double epsilon);
+    void KineticEnergySolver();
+    void PotentialEnergySolver(double epsilon);
     double EnergyLoss();
     bool Bound(planet OnePlanet);
 
 };
 
-#endif // SOLVER_H
+#endif // SYSTEM_H

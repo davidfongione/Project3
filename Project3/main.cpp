@@ -12,15 +12,11 @@ int main()
     cout << "Final time : ";
     cin >> final_time;
 
-    protoplanet Earth(0.000003,1.,0.0,0.0,0.0,6.3,0.);
+    protoplanet Earth(0.000003,1.,0.0,0.0,0.0,6.28,0.);
 
-
-    ofstream output_one("Euler");
-    ofstream output_two("Verlet");
-
-    Earth.EulerBinary(n,final_time, output_one);
+    Earth.EulerBinary(n,final_time);
     cout << "Euler ok" << endl;
-    Earth.VerletBinary(n, final_time, output_two);
+    Earth.VerletBinary(n, final_time);
     cout << "Verlet ok" << endl;
     return 0;
 }

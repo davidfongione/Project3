@@ -19,6 +19,7 @@ public:
     double velocity[3];
     double potential;
     double kinetic;
+    double angular[3];
 
     // Initializers
     protoplanet();
@@ -27,13 +28,15 @@ public:
     // Functions
     double r();
     double distance(protoplanet otherPlanet);
-    double GravitationalForce(protoplanet otherPlanet, double Gconst);
-    double Acceleration(protoplanet otherPlanet, double Gconst);
+    double GravitationalForce(protoplanet otherPlanet);
+    double Acceleration(protoplanet otherPlanet);
     double KineticEnergy();
-    double PotentialEnergy(protoplanet &otherPlanet, double Gconst, double epsilon);
-    void EulerBinary(int integration_points, double final_time, std::ofstream &output);
-    void VerletBinary(int integration_points, double final_time, std::ofstream &output);
-
+    double PotentialEnergy(protoplanet &otherPlanet, double epsilon);
+    double * LinearMomentum();
+    double * AngularMomentum();
+    void EulerBinary(int integration_points, double final_time);
+    void VerletBinary(int integration_points, double final_time);
+    bool Bound();
 };
 
 #endif // PROTOPLANET_H

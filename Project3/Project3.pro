@@ -5,10 +5,10 @@ CONFIG -= qt
 
 SOURCES += main.cpp \
     planet.cpp \
-    solver.cpp \
-    protoplanet.cpp
+    protoplanet.cpp \
+    system.cpp
 
 HEADERS += \
     planet.h \
-    solver.h \
-    protoplanet.h
+    protoplanet.h \
+    system.h
