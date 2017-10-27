@@ -217,7 +217,6 @@ void planetsimplified::VerletBinary(int integration_points, double final_time, d
             this->velocity[j] += - h * TwoPi2 * ( (x_prev[j]/denominator_prev) + this->position[j]/denominator );
 
         time += h;
-
     }
     finish = clock();
     std::cout << "elapsed time :" << (double) (finish-start)/((double) CLOCKS_PER_SEC) << std::endl;

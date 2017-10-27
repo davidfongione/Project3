@@ -6,5 +6,6 @@ CONFIG -= qt
 SOURCES += main.cpp \
     planetsimplified.cpp
 
+
 HEADERS += \
     planetsimplified.h

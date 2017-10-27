@@ -10,7 +10,6 @@
 using std::vector;
 using std::string;
 
-
 class planetsimplified
 {
 public:

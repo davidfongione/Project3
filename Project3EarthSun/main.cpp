@@ -30,7 +30,6 @@ int main()
         cout << "Euler ok" << endl;
         Earth.VerletBinary(n, final_time,b, filename_verlet);
         cout << "Verlet ok" << endl;
-}
-
+    }
     return 0;
 }

@@ -306,7 +306,6 @@ void System::PotentialEnergySolver(double epsilon)
     }
 }
 
-
 double System::EnergyLoss()
 {
     bool bound;
