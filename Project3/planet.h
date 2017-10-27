@@ -5,7 +5,6 @@
 #include <vector>
 using std::vector;
 
-
 class planet
 {
 public:

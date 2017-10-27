@@ -85,7 +85,6 @@ void System::VelocityVerlet(int dimension, int integration_points, double final_
     x(t+dt) = x(t) + v(t)*dt + 0.5*dt*dt*a(t);
     v(t+dt) = v(t) + 0.5*dt*[a(t) + a(t+dt)];*/
 
-
     // Define time step
     double time_step = final_time/((double) integration_points);
     double time = 0.0;

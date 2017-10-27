@@ -32,8 +32,6 @@ planet::planet(double M, double x, double y, double z, double vx, double vy, dou
     angular[2] = 0.;
 }
 
-
-
 double planet::r()
 {
     double x, y, z;

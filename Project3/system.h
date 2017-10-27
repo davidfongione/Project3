@@ -42,5 +42,4 @@ public:
     bool Bound(planet OnePlanet);
 
 };
-
 #endif // System_H
