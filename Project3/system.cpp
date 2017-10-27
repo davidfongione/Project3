@@ -1,48 +1,59 @@
-#include "system.h"
+#include "System.h"
 #include "planet.h"
 #include <iostream>
 #include <cmath>
 #include "time.h"
 
-system::system()
+System::System()
 {
     total_planets = 0;
     radius = 100;
     total_mass = 0;
-    G = 4*M_PI*M_PI;
+    G_param = 4*M_PI*M_PI;
     totalKinetic = 0;
     totalPotential = 0;
 }
 
-system::system(double radi)
+System::System(double radi)
 {
     total_planets = 0;
     radius = radi;
     total_mass = 0;
-    G = 4*M_PI*M_PI;
+    G_param = 4*M_PI*M_PI;
     totalKinetic = 0;
     totalPotential = 0;
 }
 
-void system::add(planet newplanet)
+System::System(const System &other)
+{
+    total_planets = other.total_planets;
+    radius = other.radius;
+    total_mass = other.total_mass;
+    G_param = 4*M_PI*M_PI;
+    totalKinetic = other.totalKinetic;
+    totalPotential = other.totalPotential;
+}
+
+void System::add(planet newplanet)
 {
     total_planets += 1;
     total_mass += newplanet.mass;
     all_planets.push_back(newplanet);
 }
 
-void system::addM(planet newplanet)
+void System::addM(planet newplanet)
 {
     total_planets +=1;
     all_planets.push_back(newplanet);
 }
 
-void system::GravitationalConstant()
+void System::GravitationalConstant()
 {
-    G = (4*M_PI*M_PI/32)*radius*radius*radius/total_mass;
+    G_param = (4*M_PI*M_PI)*radius*radius*radius/total_mass;
+    // originally written as FourPi2 / 32 ????
 }
 
-void system::print_position(std::ofstream &output, int dimension, double time,int number)
+void System::print_position(std::ofstream &output, int dimension, double time,int number)
 {   // Writes mass, position and velocity to a file "output"
     if(dimension > 3 || dimension <= 0) dimension = 3;
     else{
@@ -56,7 +67,7 @@ void system::print_position(std::ofstream &output, int dimension, double time,in
     }
 }
 
-void system::print_energy(std::ofstream &output, double time,double epsilon)
+void System::print_energy(std::ofstream &output, double time,double epsilon)
 {   // Writes energies to a file "output"
 
     this->KineticEnergySolver();
@@ -68,7 +79,7 @@ void system::print_energy(std::ofstream &output, double time,double epsilon)
     }
 }
 
-void system::VelocityVerlet(int dimension, int integration_points, double final_time, int print_number, double epsilon)
+void System::VelocityVerlet(int dimension, int integration_points, double final_time, int print_number, double beta, double epsilon)
 {   /*  Velocity-Verlet solver for two coupeled ODEs in a given number of dimensions.
     The algorithm is, exemplified in 1D for position x(t), velocity v(t) and acceleration a(t):
     x(t+dt) = x(t) + v(t)*dt + 0.5*dt*dt*a(t);
@@ -130,7 +141,7 @@ void system::VelocityVerlet(int dimension, int integration_points, double final_
             // Calculate forces in each dimension
                 for(int nr2=nr1+1; nr2<total_planets; nr2++){
                     planet &other = all_planets[nr2];
-                    GravitationalForce(current,other,Fx,Fy,Fz,epsilon);
+                    GravitationalForce(current,other,Fx,Fy,Fz, beta,epsilon);
                 }
 
             // Acceleration in each dimension for current planet
@@ -146,7 +157,7 @@ void system::VelocityVerlet(int dimension, int integration_points, double final_
             // Loop over all other planets
                 for(int nr2=nr1+1; nr2<total_planets; nr2++){
                     planet &other = all_planets[nr2];
-                    GravitationalForce(current,other,Fxnew,Fynew,Fznew,epsilon);
+                    GravitationalForce(current,other,Fxnew,Fynew,Fznew,beta,epsilon);
                 }
 
             // Acceleration each dimension exerted for current planet
@@ -205,7 +216,7 @@ void system::VelocityVerlet(int dimension, int integration_points, double final_
     delete_matrix(acceleration_new);
 }
 
-double ** system::setup_matrix(int height,int width)
+double ** System::setup_matrix(int height,int width)
 {   // Function to set up a 2D array
 
     // Set up matrix
@@ -225,7 +236,7 @@ double ** system::setup_matrix(int height,int width)
     return matrix;
 }
 
-void system::delete_matrix(double **matrix)
+void System::delete_matrix(double **matrix)
 {   // Function to deallocate memory of a 2D array
 
     for (int i=0; i<total_planets; i++)
@@ -233,35 +244,35 @@ void system::delete_matrix(double **matrix)
     delete [] matrix;
 }
 
-void system::GravitationalForce(planet &current,planet &other,double &Fx,double &Fy,double &Fz,double epsilon)
+void System::GravitationalForce(planet &current,planet &other,double &Fx,double &Fy,double &Fz, double beta, double epsilon)
 {   // Function that calculates the gravitational force between two objects, component by component.
 
     // Calculate relative distance between current planet and all other planets
     double relative_distance[3];
 
     for(int j = 0; j < 3; j++) relative_distance[j] = current.position[j]-other.position[j];
-    double r = current.distance(other);
+    double denominator = pow(current.distance(other), beta + 1.0);
     double smoothing = epsilon*epsilon*epsilon;
 
     // Calculate the forces in each direction
-    Fx -= this->G*current.mass*other.mass*relative_distance[0]/((r*r*r) + smoothing);
-    Fy -= this->G*current.mass*other.mass*relative_distance[1]/((r*r*r) + smoothing);
-    Fz -= this->G*current.mass*other.mass*relative_distance[2]/((r*r*r) + smoothing);
+    Fx -= this->G_param*current.mass*other.mass*relative_distance[0]/(denominator + smoothing);
+    Fy -= this->G_param*current.mass*other.mass*relative_distance[1]/(denominator + smoothing);
+    Fz -= this->G_param*current.mass*other.mass*relative_distance[2]/(denominator + smoothing);
 }
 
-void system::GravitationalForce_RK(double x_rel,double y_rel,double z_rel,double &Fx,double &Fy,double &Fz,double mass1,double mass2)
+void System::GravitationalForce_RK(double x_rel,double y_rel,double z_rel,double &Fx,double &Fy,double &Fz,double mass1,double mass2)
 {   // Function that calculates the gravitational force between two objects, component by component.
 
     // Calculate relative distance between current planet and all other planets
     double r = sqrt(x_rel*x_rel + y_rel*y_rel + z_rel*z_rel);
 
     // Calculate the forces in each direction
-    Fx -= this->G*mass1*mass2*x_rel/(r*r*r);
-    Fy -= this->G*mass1*mass2*y_rel/(r*r*r);
-    Fz -= this->G*mass1*mass2*z_rel/(r*r*r);
+    Fx -= this->G_param*mass1*mass2*x_rel/(r*r*r);
+    Fy -= this->G_param*mass1*mass2*y_rel/(r*r*r);
+    Fz -= this->G_param*mass1*mass2*z_rel/(r*r*r);
 }
 
-void system::KineticEnergySolver()
+void System::KineticEnergySolver()
 {
     totalKinetic = 0;
     for(int nr=0;nr<total_planets;nr++){
@@ -270,7 +281,15 @@ void system::KineticEnergySolver()
     }
 }
 
-void system::PotentialEnergySolver(double epsilon)
+void System::AngularMomentumSolver()
+{
+    for(int nr=0;nr<total_planets;nr++){
+        planet &Current = all_planets[nr];
+        for(int j=0;j<3;j++) Current.angular[j] = Current.AngularMomentum()[j];
+    }
+}
+
+void System::PotentialEnergySolver(double epsilon)
 {
     totalPotential = 0;
     for(int nr=0;nr<total_planets;nr++){
@@ -281,19 +300,14 @@ void system::PotentialEnergySolver(double epsilon)
         planet &Current = all_planets[nr1];
         for(int nr2=nr1+1;nr2<total_planets;nr2++){
             planet &Other = all_planets[nr2];
-            Current.potential += Current.PotentialEnergy(Other,G,epsilon);
-            Other.potential += Other.PotentialEnergy(Current,G,epsilon);
+            Current.potential += Current.PotentialEnergy(Other,G_param,epsilon);
+            Other.potential += Other.PotentialEnergy(Current,G_param,epsilon);
         }
     }
 }
 
-bool system::Bound(planet OnePlanet)
-{
-    return ((OnePlanet.kinetic + OnePlanet.potential) < 0.0);
-}
 
-
-double system::EnergyLoss()
+double System::EnergyLoss()
 {
     bool bound;
     vector<int> indices;
@@ -309,3 +323,7 @@ double system::EnergyLoss()
     return EnergyLoss;
 }
 
+bool System::Bound(planet OnePlanet)
+{
+    return ((OnePlanet.kinetic + OnePlanet.potential) < 0.0);
+}

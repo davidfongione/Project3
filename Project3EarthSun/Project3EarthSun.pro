@@ -4,11 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 SOURCES += main.cpp \
-    planet.cpp \
-    protoplanet.cpp \
-    System.cpp
+    planetsimplified.cpp
 
 HEADERS += \
-    planet.h \
-    protoplanet.h \
-    System.h
+    planetsimplified.h

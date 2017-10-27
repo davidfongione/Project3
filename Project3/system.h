@@ -1,17 +1,17 @@
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef System_H
+#define System_H
 #include "planet.h"
 #include <vector>
 #include <fstream>
 using std::vector;
 
-class system
+class System
 {
 public:
     friend class planet;
 
     // properties
-    double radius,total_mass,G;
+    double radius,total_mass,G_param;
     int total_planets;
     vector<planet> all_planets;
     double totalKinetic;
@@ -20,8 +20,9 @@ public:
     // constants
 
     // initializers
-    system();
-    system(double radi);
+    System();
+    System(double radi);
+    System(System const &other);
 
     // functions
     void add(planet newplanet);
@@ -29,16 +30,17 @@ public:
     void GravitationalConstant();
     void print_position(std::ofstream &output, int dimension, double time, int number);
     void print_energy(std::ofstream &output, double time, double epsilon);
-    void VelocityVerlet(int dimension, int integration_points, double final_time, int print_number, double epsilon);
+    void VelocityVerlet(int dimension, int integration_points, double final_time, int print_number, double beta, double epsilon);
     double **setup_matrix(int height, int width);
     void delete_matrix(double **matrix);
-    void GravitationalForce(planet &current, planet &other, double &Fx, double &Fy, double &Fz, double epsilon);
+    void GravitationalForce(planet &current, planet &other, double &Fx, double &Fy, double &Fz, double beta, double epsilon);
     void GravitationalForce_RK(double x_rel, double y_rel, double z_rel, double &Fx, double &Fy, double &Fz, double mass1, double mass2);
     void KineticEnergySolver();
+    void AngularMomentumSolver();
     void PotentialEnergySolver(double epsilon);
     double EnergyLoss();
     bool Bound(planet OnePlanet);
 
 };
 
-#endif // SYSTEM_H
+#endif // System_H

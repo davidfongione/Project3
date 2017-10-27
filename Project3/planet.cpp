@@ -11,6 +11,9 @@ planet::planet()
     velocity[2] = 0.;
     potential = 0.;
     kinetic = 0.;
+    angular[0] = 0.;
+    angular[1] = 0.;
+    angular[2] = 0.;
 }
 
 planet::planet(double M, double x, double y, double z, double vx, double vy, double vz)
@@ -19,12 +22,17 @@ planet::planet(double M, double x, double y, double z, double vx, double vy, dou
     position[0] = x;
     position[1] = y;
     position[2] = z;
-    velocity[0] = vx;
-    velocity[1] = vy;
-    velocity[2] = vz;
+    velocity[0] = 365.256363*vx; //nasa data is in Au/day, whereas we're working on Au/year
+    velocity[1] = 365.256363*vy;
+    velocity[2] = 365.256363*vz;
     potential = 0.;
     kinetic = 0.;
+    angular[0] = 0.;
+    angular[1] = 0.;
+    angular[2] = 0.;
 }
+
+
 
 double planet::r()
 {
@@ -80,4 +88,26 @@ double planet::PotentialEnergy(planet &otherPlanet, double Gconst, double epsilo
 {
     if(epsilon==0.0) return -Gconst*this->mass*otherPlanet.mass/this->distance(otherPlanet);
     else return (Gconst*this->mass*otherPlanet.mass/epsilon)*(atan(this->distance(otherPlanet)/epsilon) - (0.5*M_PI));
+}
+
+double * planet::LinearMomentum()
+{
+    double * linear_momentum;
+    linear_momentum = new double[3];
+
+    for (int i = 0;i<3;i++) linear_momentum[i] = this->mass * this->velocity[i];
+
+    return linear_momentum;
+}
+
+double * planet::AngularMomentum()
+{
+    double * angmom;
+    angmom = new double[3];
+
+    double * linmom = this->LinearMomentum();
+
+    for (int i=0;i<3;i++)
+        angmom[i] = this->position[(i+1)%3] * linmom[(i+2)%3] - this->position[(i+2)%3] * linmom[(i+1)%3];
+    return angmom;
 }
