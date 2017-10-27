@@ -7,7 +7,7 @@ using namespace std;
 int main()
 {
     int n;
-    double final_time, b, vx, vy;
+    double final_time, vx, vy;
     cout << "Number of integration points : ";
     cin >> n;
     cout << "Final time : ";
@@ -23,8 +23,8 @@ int main()
     {
         cout << "beta : " << b <<endl;
         string terminaison = to_string(b) + ".txt";
-        string filename_euler = "Euler velocity beta = " + terminaison;
-        string filename_verlet = "Verlet velocity beta = " + terminaison;
+        string filename_euler = "Euler beta = " + terminaison;
+        string filename_verlet = "Verlet beta = " + terminaison;
 
         Earth.EulerBinary(n,final_time,b, filename_euler);
         cout << "Euler ok" << endl;
